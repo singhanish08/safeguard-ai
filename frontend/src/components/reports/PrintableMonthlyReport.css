@@ -1,0 +1,71 @@
+.print-report-source {
+  position: fixed;
+  top: 0;
+  left: -10000px;
+  width: 190mm;
+  padding: 0;
+  background: #fff;
+  color: #111827;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.print-report-header { border-bottom: 2px solid #1d4ed8; padding-bottom: 15px; }
+.print-brand-lockup { display: flex; align-items: center; gap: 10px; margin-bottom: 17px; }
+.print-brand-mark { display: grid; width: 32px; height: 32px; place-items: center; background: #1d4ed8; color: #fff; }
+.print-brand-mark svg { width: 19px; height: 19px; }
+.print-brand { margin: 0; color: #111827; font-size: 23px; font-weight: 800; letter-spacing: -.025em; }
+.print-product { margin: 2px 0 0; color: #64748b; font-size: 9px; letter-spacing: .015em; }
+.print-report-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+.print-report-heading h1 { margin: 0; color: #0f172a; font-size: 18px; letter-spacing: -.01em; }
+.print-report-heading dl { min-width: 265px; margin: 0; font-size: 9px; }
+.print-report-heading dl div { display: flex; justify-content: space-between; gap: 16px; padding-top: 4px; }
+.print-report-heading dt { color: #6b7280; }
+.print-report-heading dd { margin: 0; font-weight: 600; text-align: right; }
+.print-report-section { margin-top: 15px; break-inside: avoid; }
+.print-report-section h2 { margin: 0 0 8px; padding: 0 0 5px 7px; border-bottom: 1px solid #cbd5e1; border-left: 3px solid #2563eb; color: #1e3a8a; font-size: 11px; text-transform: uppercase; letter-spacing: .065em; }
+.print-summary-grid { display: grid; grid-template-columns: repeat(5, 1fr); border: 1px solid #cbd5e1; border-top: 2px solid #2563eb; }
+.print-summary-item { padding: 10px 6px; border-right: 1px solid #cbd5e1; background: #f8fafc; text-align: center; }
+.print-summary-item:last-child { border-right: 0; }
+.print-summary-item strong { display: block; color: #0f172a; font-size: 19px; }
+.print-summary-item span { display: block; margin-top: 3px; color: #475569; font-size: 8.5px; }
+.print-distribution-grid { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid #cbd5e1; }
+.print-distribution-item { display: flex; justify-content: space-between; gap: 8px; padding: 7px 9px; border-right: 1px solid #cbd5e1; color: #334155; font-size: 9px; }
+.print-distribution-item strong { color: #0f172a; }
+.print-distribution-item:nth-child(4n) { border-right: 0; }
+.print-empty { margin: 0; padding: 12px; color: #6b7280; font-size: 9px; }
+.print-chart-section {
+  min-height: 290px;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.print-chart-section .recharts-responsive-container { height: 260px !important; }
+.print-table-section {
+  margin-top: 0;
+  break-before: page;
+  page-break-before: always;
+  break-inside: auto;
+  page-break-inside: auto;
+}
+.print-incident-table { width: 100%; border-collapse: collapse; table-layout: fixed; color: #1f2937; font-size: 8.5px; }
+.print-incident-table th, .print-incident-table td { padding: 6px 5px; border: 1px solid #cbd5e1; text-align: left; overflow-wrap: anywhere; }
+.print-incident-table th { background: #eaf0f8; color: #1e3a8a; font-weight: 700; letter-spacing: .02em; }
+.print-incident-table tbody tr:nth-child(even) { background: #f8fafc; }
+.print-incident-table th:nth-child(1) { width: 12%; }
+.print-incident-table th:nth-child(2) { width: 28%; }
+.print-incident-table th:nth-child(3) { width: 16%; }
+.print-incident-table th:nth-child(4), .print-incident-table th:nth-child(5) { width: 14%; }
+.print-incident-table th:nth-child(6) { width: 16%; }
+.print-incident-table tr { break-inside: avoid; page-break-inside: avoid; }
+.print-report-footer { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-top: 16px; padding-top: 8px; border-top: 2px solid #1d4ed8; color: #475569; font-size: 8px; letter-spacing: .02em; }
+.print-report-footer span:nth-child(2) { color: #1e3a8a; font-weight: 700; text-transform: uppercase; }
+.print-page-number::after { content: "Page " counter(page); }
+
+@media print {
+  @page { size: A4 portrait; margin: 14mm 12mm 15mm; }
+  html, body { background: #fff !important; }
+  .print-report-source { position: static; width: auto; color: #000; }
+  .print-report-source, .print-report-source * { box-shadow: none !important; border-radius: 0 !important; animation: none !important; transition: none !important; }
+  .print-report-source button, .print-report-source select { display: none !important; }
+  .print-incident-table thead { display: table-header-group; }
+  .print-report-footer { break-inside: avoid; }
+}
