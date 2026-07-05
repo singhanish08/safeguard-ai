@@ -1,4 +1,5 @@
-import { createContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useState, useEffect, useCallback, useRef } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { loginUser, registerUser, logoutUser, getMe } from '../api/authApi';
 
 export const AuthContext = createContext(null);
@@ -8,6 +9,8 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
+  const queryClient = useQueryClient();
+  const isInitialMount = useRef(true);
   const isAuthenticated = !!user && !!token;
   const isEmployee = user?.role === 'employee';
   const isManager = user?.role === 'manager';
@@ -32,12 +35,16 @@ export function AuthProvider({ children }) {
   }, [token]);
 
   useEffect(() => {
-    loadUser();
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      loadUser();
+    }
   }, [loadUser]);
 
   const login = async (credentials) => {
     const { data } = await loginUser(credentials);
     const { user: userData, token: newToken } = data.data;
+    queryClient.clear();
     localStorage.setItem('token', newToken);
     localStorage.setItem('user', JSON.stringify(userData));
     setToken(newToken);
@@ -48,6 +55,7 @@ export function AuthProvider({ children }) {
   const register = async (credentials) => {
     const { data } = await registerUser(credentials);
     const { user: userData, token: newToken } = data.data;
+    queryClient.clear();
     localStorage.setItem('token', newToken);
     localStorage.setItem('user', JSON.stringify(userData));
     setToken(newToken);
@@ -61,6 +69,7 @@ export function AuthProvider({ children }) {
     } catch {
       // ignore
     }
+    queryClient.clear();
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setToken(null);

@@ -1,5 +1,6 @@
 const { validationResult } = require('express-validator');
 const Incident = require('../models/Incident');
+const User = require('../models/User');
 const Notification = require('../models/Notification');
 const ApiResponse = require('../utils/ApiResponse');
 const ApiError = require('../utils/ApiError');
@@ -68,13 +69,15 @@ const createIncident = asyncHandler(async (req, res) => {
     isActive: true,
   });
 
-  const notifications = managers.map((m) => ({
+  const notifications = managers
+    .filter((manager) => manager._id.toString() !== req.user._id.toString())
+    .map((m) => ({
     user: m._id,
     title: 'New Incident Reported',
     message: `${req.user.name} reported a new ${category} incident: ${title}`,
     type: 'new_incident',
     incidentId: incident._id,
-  }));
+    }));
 
   if (notifications.length > 0) {
     await Notification.insertMany(notifications);
@@ -162,8 +165,14 @@ const getIncidentById = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'Incident not found');
   }
 
-  if (req.user.role === 'employee' && incident.reporter._id.toString() !== req.user._id.toString()) {
-    throw new ApiError(403, 'Not authorized to view this incident');
+  if (req.user.role === 'employee') {
+    const userId = req.user._id.toString();
+    const isReporter = incident.reporter._id.toString() === userId;
+    const isAssigned = incident.assignedTo?._id?.toString() === userId;
+
+    if (!isReporter && !isAssigned) {
+      throw new ApiError(403, 'Not authorized to view this incident');
+    }
   }
 
   res.status(200).json(new ApiResponse(200, incident));
@@ -199,13 +208,15 @@ const updateStatus = asyncHandler(async (req, res) => {
 
   await incident.save();
 
-  await Notification.create({
-    user: incident.reporter,
-    title: 'Incident Status Updated',
-    message: `Your incident "${incident.title}" has been updated to ${status}`,
-    type: 'status_change',
-    incidentId: incident._id,
-  });
+  if (incident.reporter.toString() !== req.user._id.toString()) {
+    await Notification.create({
+      user: incident.reporter,
+      title: 'Incident Status Updated',
+      message: `Your incident "${incident.title}" has been updated to ${status}`,
+      type: 'status_change',
+      incidentId: incident._id,
+    });
+  }
 
   const populated = await Incident.findById(incident._id)
     .populate('reporter', 'name email avatar')
@@ -227,13 +238,15 @@ const updateRemarks = asyncHandler(async (req, res) => {
   incident.managerRemarks = remarks;
   await incident.save();
 
-  await Notification.create({
-    user: incident.reporter,
-    title: 'Manager Remarks Added',
-    message: `Manager added remarks to your incident "${incident.title}"`,
-    type: 'remark_added',
-    incidentId: incident._id,
-  });
+  if (incident.reporter.toString() !== req.user._id.toString()) {
+    await Notification.create({
+      user: incident.reporter,
+      title: 'Manager Remarks Added',
+      message: `Manager added remarks to your incident "${incident.title}"`,
+      type: 'remark_added',
+      incidentId: incident._id,
+    });
+  }
 
   const populated = await Incident.findById(incident._id)
     .populate('reporter', 'name email avatar')
@@ -251,8 +264,42 @@ const assignIncident = asyncHandler(async (req, res) => {
     throw new ApiError(404, 'Incident not found');
   }
 
+  if (req.user.role === 'manager' && assignedTo) {
+    const targetUser = await User.findById(assignedTo).select('role');
+    if (!targetUser || targetUser.role !== 'employee') {
+      throw new ApiError(403, 'Managers can only assign incidents to employees');
+    }
+  }
+
+  const previousAssignee = incident.assignedTo;
   incident.assignedTo = assignedTo;
   await incident.save();
+
+  const assigneeChanged = previousAssignee?.toString() !== assignedTo?.toString();
+
+  if (
+    assigneeChanged &&
+    previousAssignee &&
+    previousAssignee.toString() !== req.user._id.toString()
+  ) {
+    await Notification.create({
+      user: previousAssignee,
+      title: 'Incident Reassigned',
+      message: `${req.user.name} reassigned incident "${incident.title}" to another user`,
+      type: 'system',
+      incidentId: incident._id,
+    });
+  }
+
+  if (assigneeChanged && assignedTo && assignedTo.toString() !== req.user._id.toString()) {
+    await Notification.create({
+      user: assignedTo,
+      title: 'Incident Assigned to You',
+      message: `${req.user.name} assigned incident "${incident.title}" to you`,
+      type: 'system',
+      incidentId: incident._id,
+    });
+  }
 
   const populated = await Incident.findById(incident._id)
     .populate('reporter', 'name email avatar')

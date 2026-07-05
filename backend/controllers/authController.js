@@ -44,7 +44,8 @@ const register = asyncHandler(async (req, res) => {
   const token = generateToken(user._id, user.role);
   setTokenCookie(res, token);
 
-  const userData = await User.findById(user._id).select('-password').populate('department');
+  await user.populate('department');
+  const { password: _, ...userData } = user.toJSON();
 
   res.status(201).json(new ApiResponse(201, { user: userData, token }, 'Registration successful'));
 });
@@ -74,7 +75,7 @@ const login = asyncHandler(async (req, res) => {
   const token = generateToken(user._id, user.role);
   setTokenCookie(res, token);
 
-  const userData = await User.findById(user._id).select('-password').populate('department');
+  const { password: _, ...userData } = user.toJSON();
 
   res.status(200).json(new ApiResponse(200, { user: userData, token }, 'Login successful'));
 });

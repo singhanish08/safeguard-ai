@@ -45,7 +45,7 @@ export default function EmployeeDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
         <StatCard icon={FileWarning} label="Total Reported" value={data?.totalIncidents} color="indigo" />
         <StatCard icon={Activity} label="Open Incidents" value={data?.openIncidents} color="amber" />
-        <StatCard icon={CheckCircle2} label="Resolved" value={data?.resolvedIncidents} color="emerald" />
+        <StatCard icon={CheckCircle2} label="Completed" value={data?.resolvedIncidents} color="emerald" />
         <StatCard icon={AlertTriangle} label="High Risk" value={data?.highRiskIncidents} color="red" />
       </div>
 

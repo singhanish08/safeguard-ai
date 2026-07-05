@@ -20,16 +20,44 @@ const safetyTips = [
 const getEmployeeDashboard = asyncHandler(async (req, res) => {
   const userId = req.user._id;
 
-  const [totalIncidents, openIncidents, resolvedIncidents, highRiskIncidents, recentIncidents] = await Promise.all([
-    Incident.countDocuments({ reporter: userId }),
-    Incident.countDocuments({ reporter: userId, status: { $in: ['Open', 'Under Investigation'] } }),
-    Incident.countDocuments({ reporter: userId, status: 'Resolved' }),
-    Incident.countDocuments({ reporter: userId, 'aiAnalysis.riskScore': { $gte: 70 } }),
+  const [counts, recentIncidents] = await Promise.all([
+    Incident.aggregate([
+      { $match: { reporter: userId } },
+      {
+        $group: {
+          _id: null,
+          totalIncidents: { $sum: 1 },
+          openIncidents: {
+            $sum: {
+              $cond: [{ $in: ['$status', ['Open', 'Assigned', 'Under Investigation']] }, 1, 0],
+            },
+          },
+          resolvedIncidents: {
+            $sum: {
+              $cond: [{ $in: ['$status', ['Resolved', 'Closed']] }, 1, 0],
+            },
+          },
+          highRiskIncidents: {
+            $sum: {
+              $cond: [{ $gte: ['$aiAnalysis.riskScore', 70] }, 1, 0],
+            },
+          },
+        },
+      },
+    ]),
     Incident.find({ reporter: userId })
+      .select('title status aiAnalysis.severityLevel aiAnalysis.riskScore createdAt department')
       .populate('department', 'name')
       .sort({ createdAt: -1 })
       .limit(5),
   ]);
+
+  const {
+    totalIncidents = 0,
+    openIncidents = 0,
+    resolvedIncidents = 0,
+    highRiskIncidents = 0,
+  } = counts[0] || {};
 
   const tipOfDay = safetyTips[new Date().getDate() % safetyTips.length];
 
@@ -48,68 +76,103 @@ const getEmployeeDashboard = asyncHandler(async (req, res) => {
 const getManagerDashboard = asyncHandler(async (req, res) => {
   const now = new Date();
   const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-  const [totalIncidents, openIncidents, highRiskIncidents, resolvedThisMonth, incidents] = await Promise.all([
-    Incident.countDocuments(),
-    Incident.countDocuments({ status: { $in: ['Open', 'Under Investigation'] } }),
-    Incident.countDocuments({ 'aiAnalysis.riskScore': { $gte: 70 } }),
-    Incident.countDocuments({ status: 'Resolved', updatedAt: { $gte: firstOfMonth } }),
-    Incident.find()
-      .populate('department', 'name')
-      .sort({ createdAt: -1 }),
-  ]);
-
   const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
-  const monthlyData = await Incident.aggregate([
-    { $match: { createdAt: { $gte: sixMonthsAgo } } },
-    {
-      $group: {
-        _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } },
-        count: { $sum: 1 },
+
+  const [
+    countResult,
+    monthlyData,
+    severityData,
+    departmentData,
+    statusData,
+    highRiskAlerts,
+    recentIncidents,
+  ] = await Promise.all([
+    Incident.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalIncidents: { $sum: 1 },
+          openIncidents: {
+            $sum: {
+              $cond: [{ $in: ['$status', ['Open', 'Assigned', 'Under Investigation']] }, 1, 0],
+            },
+          },
+          highRiskIncidents: {
+            $sum: {
+              $cond: [{ $gte: ['$aiAnalysis.riskScore', 70] }, 1, 0],
+            },
+          },
+          resolvedThisMonth: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $in: ['$status', ['Resolved', 'Closed']] },
+                    { $gte: ['$updatedAt', firstOfMonth] },
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+        },
       },
-    },
-    { $sort: { _id: 1 } },
-  ]);
-
-  const severityData = await Incident.aggregate([
-    {
-      $group: {
-        _id: '$aiAnalysis.severityLevel',
-        count: { $sum: 1 },
+    ]),
+    Incident.aggregate([
+      { $match: { createdAt: { $gte: sixMonthsAgo } } },
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } },
+          count: { $sum: 1 },
+        },
       },
-    },
-  ]);
-
-  const departmentData = await Incident.aggregate([
-    { $group: { _id: '$department', count: { $sum: 1 } } },
-    { $lookup: { from: 'departments', localField: '_id', foreignField: '_id', as: 'department' } },
-    { $unwind: { path: '$department', preserveNullAndEmptyArrays: true } },
-    { $project: { _id: { $ifNull: ['$department.name', 'Unknown'] }, count: 1 } },
-    { $sort: { count: -1 } },
-    { $limit: 10 },
-  ]);
-
-  const statusData = await Incident.aggregate([
-    {
-      $group: {
-        _id: '$status',
-        count: { $sum: 1 },
+      { $sort: { _id: 1 } },
+    ]),
+    Incident.aggregate([
+      {
+        $group: {
+          _id: '$aiAnalysis.severityLevel',
+          count: { $sum: 1 },
+        },
       },
-    },
+    ]),
+    Incident.aggregate([
+      { $group: { _id: '$department', count: { $sum: 1 } } },
+      { $lookup: { from: 'departments', localField: '_id', foreignField: '_id', as: 'department' } },
+      { $unwind: { path: '$department', preserveNullAndEmptyArrays: true } },
+      { $project: { _id: { $ifNull: ['$department.name', 'Unknown'] }, count: 1 } },
+      { $sort: { count: -1 } },
+      { $limit: 10 },
+    ]),
+    Incident.aggregate([
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 },
+        },
+      },
+    ]),
+    Incident.find({ 'aiAnalysis.riskScore': { $gte: 80 } })
+      .select('title reporter department aiAnalysis.riskScore')
+      .populate('reporter', 'name')
+      .populate('department', 'name')
+      .sort({ 'aiAnalysis.riskScore': -1 })
+      .limit(5),
+    Incident.find()
+      .select('title status reporter department aiAnalysis.severityLevel aiAnalysis.riskScore createdAt')
+      .populate('reporter', 'name')
+      .populate('department', 'name')
+      .sort({ createdAt: -1 })
+      .limit(10),
   ]);
 
-  const highRiskAlerts = await Incident.find({ 'aiAnalysis.riskScore': { $gte: 80 } })
-    .populate('reporter', 'name')
-    .populate('department', 'name')
-    .sort({ 'aiAnalysis.riskScore': -1 })
-    .limit(5);
-
-  const recentIncidents = await Incident.find()
-    .populate('reporter', 'name')
-    .populate('department', 'name')
-    .populate('assignedTo', 'name')
-    .sort({ createdAt: -1 })
-    .limit(10);
+  const {
+    totalIncidents = 0,
+    openIncidents = 0,
+    highRiskIncidents = 0,
+    resolvedThisMonth = 0,
+  } = countResult[0] || {};
 
   res.status(200).json(
     new ApiResponse(200, {

@@ -29,9 +29,11 @@ export default function IncidentDetail() {
   const [statusValue, setStatusValue] = useState('');
   const [assignValue, setAssignValue] = useState('');
 
+  const assignUserParams = isManager ? { limit: 100, role: 'employee' } : { limit: 100 };
+
   const { data: usersData } = useQuery({
-    queryKey: ['users', { limit: 100 }],
-    queryFn: () => getAllUsers({ limit: 100 }).then((r) => r.data.data),
+    queryKey: ['users', assignUserParams],
+    queryFn: () => getAllUsers(assignUserParams).then((r) => r.data.data),
     enabled: canManage,
   });
 

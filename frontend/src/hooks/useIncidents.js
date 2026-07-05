@@ -39,6 +39,7 @@ export function useCreateIncident() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['incidents'] });
       queryClient.invalidateQueries({ queryKey: ['myIncidents'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
 }
@@ -50,6 +51,7 @@ export function useUpdateStatus() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['incident'] });
       queryClient.invalidateQueries({ queryKey: ['incidents'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
 }
@@ -71,6 +73,7 @@ export function useAssignIncident() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['incident'] });
       queryClient.invalidateQueries({ queryKey: ['incidents'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
 }
@@ -81,6 +84,7 @@ export function useDeleteIncident() {
     mutationFn: (id) => deleteIncident(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['incidents'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
   });
 }

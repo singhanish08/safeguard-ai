@@ -12,6 +12,7 @@ const userRoutes = require('./routes/userRoutes');
 const departmentRoutes = require('./routes/departmentRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });

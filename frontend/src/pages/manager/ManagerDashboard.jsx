@@ -40,7 +40,7 @@ export default function ManagerDashboard() {
         <StatCard icon={FileWarning} label="Total Incidents" value={data?.totalIncidents} color="indigo" />
         <StatCard icon={Activity} label="Open Incidents" value={data?.openIncidents} color="amber" />
         <StatCard icon={AlertTriangle} label="High Risk" value={data?.highRiskIncidents} color="red" />
-        <StatCard icon={CheckCircle2} label="Resolved This Month" value={data?.resolvedThisMonth} color="emerald" />
+        <StatCard icon={CheckCircle2} label="Completed This Month" value={data?.resolvedThisMonth} color="emerald" />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">

@@ -108,7 +108,10 @@ const incidentSchema = new mongoose.Schema(
 
 incidentSchema.index({ status: 1 });
 incidentSchema.index({ reporter: 1 });
+incidentSchema.index({ reporter: 1, createdAt: -1 });
+incidentSchema.index({ reporter: 1, 'aiAnalysis.riskScore': 1 });
 incidentSchema.index({ department: 1 });
 incidentSchema.index({ 'aiAnalysis.riskScore': 1 });
+incidentSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('Incident', incidentSchema);
