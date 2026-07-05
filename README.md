@@ -74,11 +74,11 @@ safeguard-ai/
 │   └── server.js        # Entry point
 ├── frontend/
 │   ├── src/
-│   │   ├── api/         # API client modules
+│   │   ├── api/         # API client modules (auth, incidents, notifications, etc.)
 │   │   ├── components/  # Reusable UI components
 │   │   ├── context/     # Auth context
 │   │   ├── hooks/       # Custom React hooks
-│   │   ├── pages/       # Page components
+│   │   ├── pages/       # Page components (employee, manager, admin, shared, public)
 │   │   └── utils/       # Utility functions
 │   ├── App.jsx          # Root app with routing
 │   └── main.jsx         # Entry point
@@ -186,7 +186,7 @@ Visit [http://localhost:5173](http://localhost:5173) and log in with the demo cr
 ### Users
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/users` | List users (admin) |
+| GET | `/api/users` | List users (manager, admin) |
 | GET | `/api/users/:id` | Get user by ID |
 | PUT | `/api/users/:id` | Update user (admin) |
 | PUT | `/api/users/:id/toggle-status` | Toggle user active status |
@@ -206,6 +206,14 @@ Visit [http://localhost:5173](http://localhost:5173) and log in with the demo cr
 | GET | `/api/dashboard/employee` | Employee dashboard stats |
 | GET | `/api/dashboard/manager` | Manager dashboard stats |
 | GET | `/api/dashboard/admin` | Admin dashboard stats |
+
+### Notifications
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/notifications` | Get notifications (paginated) |
+| GET | `/api/notifications/unread-count` | Get unread count |
+| PATCH | `/api/notifications/:id/read` | Mark notification as read |
+| PATCH | `/api/notifications/read-all` | Mark all as read |
 
 ### Reports
 | Method | Endpoint | Description |
